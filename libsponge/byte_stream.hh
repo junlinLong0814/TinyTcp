@@ -2,6 +2,7 @@
 #define SPONGE_LIBSPONGE_BYTE_STREAM_HH
 
 #include <string>
+#include <deque>
 
 //! \brief An in-order byte stream.
 
@@ -10,6 +11,13 @@
 //! and then no more bytes can be written.
 class ByteStream {
   private:
+    std::deque<char> deq{};
+    size_t _capacity;         //最大容量
+    size_t _totalw;
+    size_t _totalr;
+    bool _bendin;
+    bool _error;
+  private:
     // Your code here -- add private members as necessary.
 
     // Hint: This doesn't need to be a sophisticated data structure at
@@ -17,7 +25,9 @@ class ByteStream {
     // that's a sign that you probably want to keep exploring
     // different approaches.
 
-    bool _error{};  //!< Flag indicating that the stream suffered an error.
+    size_t able2read() const;       //返回可读字节数
+    size_t able2write() const;      //返回可写字节数
+    
 
   public:
     //! Construct a stream with room for `capacity` bytes.
@@ -34,8 +44,6 @@ class ByteStream {
     //! \returns the number of additional bytes that the stream has space for
     size_t remaining_capacity() const;
 
-    //! Signal that the byte stream has reached its ending
-    void end_input();
 
     //! Indicate that the stream suffered an error.
     void set_error() { _error = true; }
@@ -53,8 +61,11 @@ class ByteStream {
 
     //! Read (i.e., copy and then pop) the next "len" bytes of the stream
     //! \returns a string
-    std::string read(const size_t len);
+    std::string read(const size_t len = INT_FAST32_MAX);
 
+
+    //! Signal that the byte stream has reached its ending
+    void end_input();
     //! \returns `true` if the stream input has ended
     bool input_ended() const;
 
@@ -80,6 +91,8 @@ class ByteStream {
     //! Total number of bytes popped
     size_t bytes_read() const;
     //!@}
+ 
+    
 };
 
 #endif  // SPONGE_LIBSPONGE_BYTE_STREAM_HH
