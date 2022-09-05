@@ -20,12 +20,21 @@ class TCPReceiver {
     //! The maximum number of bytes we'll store.
     size_t _capacity;
 
+    bool                          _syn;           //是否已经收到syn报文
+    bool                          _finish;        //是否已经收到finish报文
+    bool                          _ACK;           //ACK选项是否可用
+    bool                          _syn_with_data; //true时表示syn报文携带数据
+    uint64_t                      _checkpoint;
+    std::optional<WrappingInt32>  _isn_peer;      //对端的isn
+
   public:
     //! \brief Construct a TCP receiver
     //!
     //! \param capacity the maximum number of bytes that the receiver will
     //!                 store in its buffers at any give time.
-    TCPReceiver(const size_t capacity) : _reassembler(capacity), _capacity(capacity) {}
+    TCPReceiver(const size_t capacity) : _reassembler(capacity), _capacity(capacity) ,
+                                         _syn(false),_finish(false),_ACK(false),_syn_with_data(false),
+                                         _checkpoint(0),_isn_peer() {}
 
     //! \name Accessors to provide feedback to the remote TCPSender
     //!@{
@@ -49,6 +58,8 @@ class TCPReceiver {
     //! beginning of the window (the ackno).
     size_t window_size() const;
     //!@}
+
+    uint64_t next_relative_seq() const;
 
     //! \brief number of bytes stored but not yet reassembled
     size_t unassembled_bytes() const { return _reassembler.unassembled_bytes(); }

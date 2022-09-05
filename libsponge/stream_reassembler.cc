@@ -32,7 +32,6 @@ void StreamReassembler::push_substring(const string &data, const size_t index, c
     add_new_seg(data,index);
     match_and_write();
 
-    //printf("index[%lld],parm_eof[%d],ori_eof[%d]\n",static_cast<long long>(index),eof,_eof);
     if(eof == true && _eof == false && index + data.size() <=  first_unread + _capacity)
          _eof = true;
     if(empty() && (_eof||eof)){

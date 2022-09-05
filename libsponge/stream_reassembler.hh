@@ -18,8 +18,8 @@ class StreamReassembler {
     size_t _capacity;    //!< The maximum number of bytes
     size_t stream_start;
     size_t first_unread;
-    size_t first_unassembled;
-    size_t first_unacceptable;
+    mutable size_t first_unassembled;
+    mutable size_t first_unacceptable;
     bool _eof;
     struct data_seg{
       size_t idx;
@@ -73,6 +73,8 @@ class StreamReassembler {
     //! should only be counted once for the purpose of this function.
     size_t unassembled_bytes() const;
 
+    uint64_t get_first_unassembled() const { first_unassembled = _output.bytes_written(); return static_cast<uint64_t>(first_unassembled);}
+    size_t window_size() const { return first_unread + _capacity - first_unassembled;}
     //! \brief Is the internal state empty (other than the output stream)?
     //! \returns `true` if no substrings are waiting to be assembled
     bool empty() const;
