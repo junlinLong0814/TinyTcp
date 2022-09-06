@@ -24,6 +24,7 @@ class TCPSender {
     std::queue<TCPSegment> _segments_out{};
 
     //! retransmission timer for the connection
+    /*RTO*/
     unsigned int _initial_retransmission_timeout;
 
     //! outgoing stream of bytes that have not yet been sent
@@ -32,6 +33,18 @@ class TCPSender {
     //! the (absolute) sequence number for the next byte to be sent
     uint64_t _next_seqno{0};
 
+
+    /*RTO相关*/
+    size_t _elapsed_time = 0;            //经过的时间
+    size_t _rto = 0;                     //rto时间
+    unsigned int _retran_count = 0;      //重传次数
+    std::queue<TCPSegment> _noack_segs{}; //还未收到ack的segements
+    bool _timer_start = false;           //计时器是否启动
+
+    uint64_t _ackno = 0;             //标识收到的ackno,zero index
+    size_t _rec_win_size = 0;            //recevier window size
+    bool  _is_established = false;               //是否已经建立了连接
+    bool  _is_finwait1 = false;                  //是否已经到了fin-wait1状态
   public:
     //! Initialize a TCPSender
     TCPSender(const size_t capacity = TCPConfig::DEFAULT_CAPACITY,
