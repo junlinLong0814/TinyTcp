@@ -15,7 +15,7 @@ using namespace std;
 
 /*
 |<----------------------StreamReassembler.capacity---------------------|
-|---<first_unread>---------<first_unassembled>-----<first_unacceptable>|
+|---<first_unread>--有序--<first_unassembled>-无序--<first_unacceptable>|
 */
 StreamReassembler::StreamReassembler(const size_t capacity) : _output(capacity), _capacity(capacity),
                                                               stream_start(0),first_unread(0),
@@ -82,8 +82,6 @@ void StreamReassembler::merge_seg(data_seg& seg){
         store_segs.insert(seg);
     }
     else{
-        
-
         for(auto iter = store_segs.begin(); iter != store_segs.end(); ){
             size_t cmp_start_idx = iter->idx, cmp_end_idx = iter->idx + iter->length;
             size_t cur_start_idx = seg.idx, cur_end_idx = seg.idx+seg.length;

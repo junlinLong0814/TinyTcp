@@ -8,6 +8,7 @@
 
 #include <functional>
 #include <queue>
+#include <deque>
 
 //! \brief The "sender" part of a TCP implementation.
 
@@ -17,6 +18,25 @@
 //! segments if the retransmission timer expires.
 class TCPSender {
   private:
+    class Timer{
+         private:
+         size_t last_flash_time{0};
+         size_t now_time{0};
+         public:
+         void flash(){
+           last_flash_time=now_time;
+         }
+         void tick(const size_t pass_time){
+           now_time+=pass_time;
+         }
+         bool time_out(const size_t RTO){
+           return now_time-last_flash_time>=RTO;
+         }
+    };
+    struct seg_node{
+       TCPSegment seg={};
+       uint64_t seq{0};
+    };
     //! our initial sequence number, the number for our SYN.
     WrappingInt32 _isn;
 
@@ -24,7 +44,6 @@ class TCPSender {
     std::queue<TCPSegment> _segments_out{};
 
     //! retransmission timer for the connection
-    /*RTO*/
     unsigned int _initial_retransmission_timeout;
 
     //! outgoing stream of bytes that have not yet been sent
@@ -32,19 +51,17 @@ class TCPSender {
 
     //! the (absolute) sequence number for the next byte to be sent
     uint64_t _next_seqno{0};
-
-
-    /*RTO相关*/
-    size_t _elapsed_time = 0;            //经过的时间
-    size_t _rto = 0;                     //rto时间
-    unsigned int _retran_count = 0;      //重传次数
-    std::queue<TCPSegment> _noack_segs{}; //还未收到ack的segements
-    bool _timer_start = false;           //计时器是否启动
-
-    uint64_t _ackno = 0;             //标识收到的ackno,zero index
-    size_t _rec_win_size = 0;            //recevier window size
-    bool  _is_established = false;               //是否已经建立了连接
-    bool  _is_finwait1 = false;                  //是否已经到了fin-wait1状态
+    uint64_t has_acked_seq{0};
+    uint64_t fin_ack_index{UINT64_MAX};
+    std::deque<seg_node>un_ack_buffer{};
+    uint64_t win_redge{1};
+    size_t retrans_num{0};
+    size_t RTO;
+    Timer timer={};
+    
+    /*初始化tcp报文序列号*/
+    TCPSegment get_init_seq_seg();
+    void send_tcp_seg(const TCPSegment& seg); 
   public:
     //! Initialize a TCPSender
     TCPSender(const size_t capacity = TCPConfig::DEFAULT_CAPACITY,
@@ -56,7 +73,6 @@ class TCPSender {
     ByteStream &stream_in() { return _stream; }
     const ByteStream &stream_in() const { return _stream; }
     //!@}
-
     //! \name Methods that can cause the TCPSender to send a segment
     //!@{
 
@@ -64,11 +80,11 @@ class TCPSender {
     void ack_received(const WrappingInt32 ackno, const uint16_t window_size);
 
     //! \brief Generate an empty-payload segment (useful for creating empty ACK segments)
-    void send_empty_segment();
+    void send_empty_ack();
 
     //! \brief create and send segments to fill as much of the window as possible
     void fill_window();
-
+    
     //! \brief Notifies the TCPSender of the passage of time
     void tick(const size_t ms_since_last_tick);
     //!@}
@@ -79,7 +95,7 @@ class TCPSender {
     //! \brief How many sequence numbers are occupied by segments sent but not yet acknowledged?
     //! \note count is in "sequence space," i.e. SYN and FIN each count for one byte
     //! (see TCPSegment::length_in_sequence_space())
-    size_t bytes_in_flight() const;
+    uint64_t bytes_in_flight() const;
 
     //! \brief Number of consecutive retransmissions that have occurred in a row
     unsigned int consecutive_retransmissions() const;

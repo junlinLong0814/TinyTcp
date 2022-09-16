@@ -19,7 +19,7 @@ void TCPReceiver::segment_received(const TCPSegment &seg) {
     if(st_header.syn){
         /*syn 报文*/
         if(_syn){
-            /*之前已经收到syn报文了 目前考虑单peer的情况下*/
+            /*之前已经收到syn报文了*/
             return ;
         }
         _syn = true;
